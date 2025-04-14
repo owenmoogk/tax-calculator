@@ -10,8 +10,8 @@ const enhancedCPPRate = 0.04;
 export class CPP {
   contributions: { YPE: number; ympe: number }[] = [];
 
-  contribute(year: number, income: number): TransactionReturn {
-    const pensionableEarnings = Math.min(income, YMPE);
+  contribute(year: number, employmentIncome: number): TransactionReturn {
+    const pensionableEarnings = Math.min(employmentIncome, YMPE);
     const baseContributoryEarnings = Math.max(
       0,
       pensionableEarnings - yearBasicExemption
@@ -20,7 +20,7 @@ export class CPP {
 
     const enhancedContributoryEarnings = Math.max(
       0,
-      Math.min(income, YAMPE) - YMPE
+      Math.min(employmentIncome, YAMPE) - YMPE
     );
     const enhancedCPPPayment = enhancedContributoryEarnings * enhancedCPPRate;
 
@@ -30,6 +30,7 @@ export class CPP {
 
     return {
       moneyOut: -(baseCPPPayment + enhancedCPPPayment),
+      employmentIncome: 0,
       taxableIncome: 0,
       realizedCapitalGains: 0,
     };
@@ -37,7 +38,12 @@ export class CPP {
 
   withdrawal(year: number): TransactionReturn {
     if (this.contributions.length === 0) {
-      return { moneyOut: 0, taxableIncome: 0, realizedCapitalGains: 0 };
+      return {
+        moneyOut: 0,
+        employmentIncome: 0,
+        taxableIncome: 0,
+        realizedCapitalGains: 0,
+      };
     }
     const N = this.contributions.length;
 
@@ -70,6 +76,7 @@ export class CPP {
 
     return {
       moneyOut: annualPension,
+      employmentIncome: 0,
       taxableIncome: annualPension,
       realizedCapitalGains: 0,
     };

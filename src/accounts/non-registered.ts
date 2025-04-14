@@ -5,10 +5,10 @@ export class NonRegistered extends Account{
     bookCost = 0
 
     // @NonNegativeFirstArg
-    addMoney(amount: number): TransactionReturn{
-        this.value += amount
-        this.bookCost += amount
-        return {moneyOut: -amount, taxableIncome: 0, realizedCapitalGains: 0}
+    addMoney(amount: number): TransactionReturn {
+      this.value += amount
+      this.bookCost += amount
+      return { moneyOut: -amount, employmentIncome: 0, taxableIncome: 0, realizedCapitalGains: 0}
     }
 
     withdrawal(amount: number): TransactionReturn{
@@ -19,6 +19,6 @@ export class NonRegistered extends Account{
       
       this.bookCost = this.bookCost * (1-fractionWithdrew)
       this.value -= amount;
-      return {moneyOut: amount, taxableIncome: 0, realizedCapitalGains: claimedCapitalGains}
+      return { moneyOut: amount, employmentIncome: 0, taxableIncome: 0, realizedCapitalGains: claimedCapitalGains}
     }
 }

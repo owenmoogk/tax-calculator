@@ -22,6 +22,7 @@ export class RRSP extends Account {
     this.contributionRoom -= amount;
     return {
       moneyOut: -amount,
+      employmentIncome: 0,
       taxableIncome: -amount,
       realizedCapitalGains: 0,
     };
@@ -31,6 +32,11 @@ export class RRSP extends Account {
     if (amount < this.value)
       throw Error('Cannot withdrawal more than exists in RRSP');
     this.value -= amount;
-    return { moneyOut: amount, taxableIncome: amount, realizedCapitalGains: 0 };
+    return {
+      moneyOut: amount,
+      employmentIncome: 0,
+      taxableIncome: amount,
+      realizedCapitalGains: 0,
+    };
   }
 }

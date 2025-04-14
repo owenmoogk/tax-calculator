@@ -1,20 +1,27 @@
 export type TransactionReturn = {
   moneyOut: number;
+  employmentIncome: number;
   taxableIncome: number;
   realizedCapitalGains: number;
 };
 
 export abstract class Account {
-  value: number;
+  value = 0;
+  year = 0;
   interest: number;
+  inflationFraction: number;
+  netInflation: number;
 
-  constructor(interest: number) {
+  constructor(interest: number, inflation: number) {
     this.interest = interest;
-    this.value = 0;
+    this.netInflation = 1;
+    this.inflationFraction = inflation;
   }
 
   newYear() {
     this.value *= this.interest + 1;
+    this.netInflation *= this.inflationFraction;
+    this.year += 1;
   }
 
   abstract addMoney(amount: number): TransactionReturn;

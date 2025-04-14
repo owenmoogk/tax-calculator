@@ -1,5 +1,6 @@
 import type { TransactionReturn } from '../accounts/types';
 import { logger } from '../logger';
+import type { NetValues } from '../simulator';
 
 type TaxBracket = {
   lowerBound: number;
@@ -57,28 +58,27 @@ function calculateEI(income: number) {
 
 export function calculateTaxOwed(
   year: number,
-  income: number,
-  capitalGains: number
+  netValues: NetValues
 ): TransactionReturn {
-  if (capitalGains < 0) {
+  if (netValues.capitalGains < 0 || netValues.taxableIncome < 0) {
     throw new Error("Can't claim a negative income.");
   }
   const federalTax = applyTax(
     year,
-    income,
-    capitalGains,
+    netValues.taxableIncome,
+    netValues.capitalGains,
     capitalGainsInclusionRateCanada,
     canadaTaxBrackets
   );
   const provincialTax = applyTax(
     year,
-    income,
-    capitalGains,
+    netValues.taxableIncome,
+    netValues.capitalGains,
     capitalGainsInclusionRateOntario,
     ontarioTaxBrackets
   );
 
-  const eiCost = calculateEI(income);
+  const eiCost = calculateEI(netValues.employmentIncome);
 
   logger.log(year, 'EI Cost', eiCost);
   logger.log(year, 'Provincial Tax', provincialTax);
@@ -89,7 +89,8 @@ export function calculateTaxOwed(
 
   return {
     moneyOut: -totalCharge,
-    taxableIncome: -income,
-    realizedCapitalGains: -capitalGains,
+    employmentIncome: 0,
+    taxableIncome: -netValues.taxableIncome,
+    realizedCapitalGains: -netValues.capitalGains,
   };
 }

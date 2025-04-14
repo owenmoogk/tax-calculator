@@ -1,4 +1,4 @@
-import { logger } from '../logger';
+import type { RESPParams } from '..';
 import type { TransactionReturn } from './types';
 import { Account } from './types';
 
@@ -8,23 +8,20 @@ const GovernmentMatchMaximum = 2500;
 export class RESP extends Account {
   EAPAmount: number;
   GovernmentMatched: number; // max 2500 per year (500 deposited)
+  GovernmentMatchMaximum = GovernmentMatchMaximum;
 
-  constructor(
-    initialAmount: number,
-    initialContributionAmount: number,
-    interest: number
-  ) {
-    super(interest);
-    this.value = initialAmount;
-    this.EAPAmount = initialAmount - initialContributionAmount;
+  constructor(rp: RESPParams, interest: number, inflation: number) {
+    super(interest, inflation);
+    this.value = rp.initialValue;
+    this.EAPAmount = rp.initialValue - rp.initialContributionSum;
     this.GovernmentMatched = 0;
   }
 
   // @NonNegativeFirstArg
   addMoney(amount: number): TransactionReturn {
     this.value += amount;
-    if (this.GovernmentMatched < GovernmentMatchMaximum) {
-      if (amount + this.GovernmentMatched < GovernmentMatchMaximum) {
+    if (this.GovernmentMatched < this.GovernmentMatchMaximum) {
+      if (amount + this.GovernmentMatched < this.GovernmentMatchMaximum) {
         const matchValue = amount * GovernmentMatchFraction;
 
         this.value += matchValue;
@@ -32,7 +29,8 @@ export class RESP extends Account {
 
         this.GovernmentMatched += amount;
       } else {
-        const valueToMatch = GovernmentMatchMaximum - this.GovernmentMatched;
+        const valueToMatch =
+          this.GovernmentMatchMaximum - this.GovernmentMatched;
         const matchValue = valueToMatch * GovernmentMatchFraction;
 
         this.value += valueToMatch;
@@ -41,7 +39,12 @@ export class RESP extends Account {
         this.GovernmentMatched += amount;
       }
     }
-    return { moneyOut: -amount, taxableIncome: 0, realizedCapitalGains: 0 };
+    return {
+      moneyOut: -amount,
+      employmentIncome: 0,
+      taxableIncome: 0,
+      realizedCapitalGains: 0,
+    };
   }
 
   withdrawal(amount: number): TransactionReturn {
@@ -55,6 +58,7 @@ export class RESP extends Account {
 
     return {
       moneyOut: amount,
+      employmentIncome: 0,
       taxableIncome: amount * eapFraction,
       realizedCapitalGains: 0,
     };
@@ -62,6 +66,7 @@ export class RESP extends Account {
 
   newYear() {
     super.newYear();
+    this.GovernmentMatchMaximum = GovernmentMatchMaximum * this.netInflation;
     this.GovernmentMatched = 0;
   }
 }
