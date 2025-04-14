@@ -1,12 +1,14 @@
+import { CPP } from './accounts/cpp';
 import { NonRegistered } from './accounts/non-registered';
 import { RESP } from './accounts/resp';
 import { RRSP } from './accounts/rrsp';
 import { TFSA } from './accounts/tfsa';
 import type { TransactionReturn } from './accounts/types';
-import { exportSimulation, record } from './record';
+import { logger } from './logger';
 import { calculateTaxOwed } from './tax/tax';
 
 // this is the first year you are in this bracket (ie. start working on jan of yr I'm 23)
+export const startingYear = 2022;
 const startingAge = 18;
 const schoolToEmploymentAge = 23;
 const retirementAge = 65;
@@ -28,6 +30,7 @@ const resp = new RESP(
   initialRESPContributionSum,
   averageInterest
 );
+const cpp = new CPP();
 const rrsp = new RRSP(averageInterest);
 const tfsa = new TFSA(averageInterest);
 const nonRegistered = new NonRegistered(averageInterest);
@@ -46,9 +49,9 @@ function applyTransaction(
 
 export function simulate() {
   let netInflation = 1;
-  const records = [];
 
   for (let age = startingAge; age < deathAge; age++) {
+    const year = startingYear + age - startingAge;
     let capitalGains = 0;
     let taxableIncome = 0;
     let result: TransactionReturn; // tmp variable to hold results before applied
@@ -74,6 +77,13 @@ export function simulate() {
     // IF RETIRED
     if (age >= retirementAge) {
       // pull out from resp
+      result = cpp.withdrawal();
+      ({ cash, taxableIncome, capitalGains } = applyTransaction(
+        cash,
+        grossIncome,
+        capitalGains,
+        result
+      ));
     }
 
     const inflationAccountedLivingExpenses = livingExpenses * netInflation;
@@ -101,18 +111,33 @@ export function simulate() {
     }
 
     // PAY TAX
-    result = calculateTaxOwed(taxableIncome, capitalGains);
-
-    record(records, {
-      age,
-      tfsaValue: tfsa.value,
-      rrspValue: rrsp.value,
-      respValue: resp.value,
-      nonRegisteredValue: nonRegistered.value,
+    result = calculateTaxOwed(year, taxableIncome, capitalGains);
+    ({ cash, taxableIncome, capitalGains } = applyTransaction(
       cash,
-    });
+      grossIncome,
+      capitalGains,
+      result
+    ));
 
-    console.log(cash);
+    if (age < retirementAge) {
+      result = cpp.contribute(grossIncome);
+      ({ cash, taxableIncome, capitalGains } = applyTransaction(
+        cash,
+        grossIncome,
+        capitalGains,
+        result
+      ));
+    }
+
+    logger.record(
+      year,
+      age,
+      tfsa.value,
+      rrsp.value,
+      resp.value,
+      nonRegistered.value,
+      cash
+    );
 
     // RESET LIMITS
     tfsa.newYear();
@@ -121,7 +146,7 @@ export function simulate() {
     nonRegistered.newYear();
     netInflation *= averageInflation + 1;
   }
-  exportSimulation(records);
+  logger.exportSimulation();
 }
 
 simulate();
