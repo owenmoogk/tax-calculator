@@ -6,8 +6,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "csv-writer": "^1.6.0",
-    "typescript": "^5.8.3"
+    "csv-writer": "^1.6.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.1",
@@ -20,6 +19,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "prettier": "^3.5.3",
     "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
     "typescript-eslint": "^8.29.1"
   }
 }

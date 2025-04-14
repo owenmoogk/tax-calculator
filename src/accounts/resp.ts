@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 import type { TransactionReturn } from './types';
 import { Account } from './types';
 
@@ -51,6 +52,7 @@ export class RESP extends Account {
     const eapFraction = this.EAPAmount / this.value;
     this.EAPAmount -= amount * eapFraction;
     this.value -= amount;
+
     return {
       moneyOut: amount,
       taxableIncome: amount * eapFraction,

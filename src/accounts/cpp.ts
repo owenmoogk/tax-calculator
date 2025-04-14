@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 import type { TransactionReturn } from './types';
 
 const yearBasicExemption = 3500;
@@ -9,7 +10,7 @@ const enhancedCPPRate = 0.04;
 export class CPP {
   contributions: { YPE: number; ympe: number }[] = [];
 
-  contribute(income: number): TransactionReturn {
+  contribute(year: number, income: number): TransactionReturn {
     const pensionableEarnings = Math.min(income, YMPE);
     const baseContributoryEarnings = Math.max(
       0,
@@ -25,6 +26,8 @@ export class CPP {
 
     this.contributions.push({ YPE: pensionableEarnings, ympe: YMPE });
 
+    logger.log(year, 'CPP Contribution', baseCPPPayment + enhancedCPPPayment);
+
     return {
       moneyOut: -(baseCPPPayment + enhancedCPPPayment),
       taxableIncome: 0,
@@ -32,7 +35,7 @@ export class CPP {
     };
   }
 
-  withdrawal(): TransactionReturn {
+  withdrawal(year: number): TransactionReturn {
     if (this.contributions.length === 0) {
       return { moneyOut: 0, taxableIncome: 0, realizedCapitalGains: 0 };
     }
@@ -62,6 +65,8 @@ export class CPP {
 
     // Base CPP pension: 25% of APE
     const annualPension = 0.25 * APE;
+
+    logger.log(year, 'CPP Withdrawal', annualPension);
 
     return {
       moneyOut: annualPension,

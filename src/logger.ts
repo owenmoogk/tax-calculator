@@ -1,5 +1,4 @@
 import { createObjectCsvWriter } from 'csv-writer';
-import { startingYear } from './main';
 
 class Logger {
   records: Record<string, number>[] = [];
@@ -19,28 +18,35 @@ class Logger {
   });
 
   log(year: number, name: string, value: number) {
-    if (!this.records[year - startingYear]) {
-      this.records[year - startingYear] = {};
+    if (!this.records[year]) {
+      this.records[year] = {};
     }
-    this.records[year - startingYear][name] = value;
+    this.records[year][name] = Math.round(value);
     this.keys.add(name);
   }
 
   record(
-    year: number,
+    yearStep: number,
     age: number,
+    year: number,
     tfsaValue: number,
     rrspValue: number,
     respValue: number,
     nonRegisteredValue: number,
     cash: number
   ) {
-    this.log(year, 'age', age);
-    this.log(year, 'tfsaValue', tfsaValue);
-    this.log(year, 'rrspValue', rrspValue);
-    this.log(year, 'respValue', respValue);
-    this.log(year, 'nonRegisteredValue', nonRegisteredValue);
-    this.log(year, 'cash', cash);
+    this.log(yearStep, 'year', year);
+    this.log(yearStep, 'age', age);
+    this.log(yearStep, 'tfsaValue', tfsaValue);
+    this.log(yearStep, 'rrspValue', rrspValue);
+    this.log(yearStep, 'respValue', respValue);
+    this.log(yearStep, 'nonRegisteredValue', nonRegisteredValue);
+    this.log(yearStep, 'cash', cash);
+    this.log(
+      yearStep,
+      'netWorth',
+      tfsaValue + rrspValue + respValue + nonRegisteredValue + cash
+    );
   }
 
   exportSimulation() {
@@ -55,7 +61,7 @@ class Logger {
     csvWriter
       .writeRecords(this.records)
       .then(() => console.log('Success'))
-      .catch(() => console.log('Error Exporting File'));
+      .catch((e: Error) => console.log(e.message));
   }
 }
 

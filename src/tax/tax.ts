@@ -27,6 +27,7 @@ const capitalGainsInclusionRateCanada = 0.5;
 const capitalGainsInclusionRateOntario = 0.5;
 
 function applyTax(
+  year: number,
   income: number,
   capitalGains: number,
   capitalGainsInclusionRate: number,
@@ -63,12 +64,14 @@ export function calculateTaxOwed(
     throw new Error("Can't claim a negative income.");
   }
   const federalTax = applyTax(
+    year,
     income,
     capitalGains,
     capitalGainsInclusionRateCanada,
     canadaTaxBrackets
   );
   const provincialTax = applyTax(
+    year,
     income,
     capitalGains,
     capitalGainsInclusionRateOntario,
