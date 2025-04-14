@@ -27,8 +27,8 @@ export type EmployerParams = {
 };
 
 const simulationParameters: SimulationParameters = {
-  startingCalendarYear: 2022,
-  startingAge: 18,
+  startingCalendarYear: 2025,
+  startingAge: 20,
   schoolToEmploymentAge: 23,
   retirementAge: 65,
   deathAge: 80,
@@ -36,7 +36,7 @@ const simulationParameters: SimulationParameters = {
   employerParams: {
     grossIncome: 150e3,
   },
-  livingExpenses: 50e3,
+  livingExpenses: 70e3,
 
   averageInterest: 0.07,
   averageInflation: 0.02,

@@ -13,7 +13,12 @@ export class TFSA extends Account {
     if (this.contributionLimitRemaining < 0) {
       throw Error('Exceeded TFSA contribution limit');
     }
-    return { moneyOut: -amount, taxableIncome: 0, realizedCapitalGains: 0 };
+    return {
+      moneyOut: -amount,
+      taxableIncome: 0,
+      employmentIncome: 0,
+      realizedCapitalGains: 0,
+    };
   }
 
   withdrawal(amount: number): TransactionReturn {
@@ -22,7 +27,12 @@ export class TFSA extends Account {
     if (this.value < 0) {
       throw Error('Exceeded possible withdrawal from TFSA');
     }
-    return { moneyOut: amount, taxableIncome: 0, realizedCapitalGains: 0 };
+    return {
+      moneyOut: amount,
+      taxableIncome: 0,
+      employmentIncome: 0,
+      realizedCapitalGains: 0,
+    };
   }
 
   newYear() {

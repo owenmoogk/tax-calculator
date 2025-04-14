@@ -1,11 +1,10 @@
 import { logger } from './logger';
-import { calculateTaxOwed } from './tax/tax';
 import { instantiateAccounts } from './instantiateAccounts';
 import type { TransactionReturn } from './accounts/types';
 import type { SimulationParameters } from '.';
 
 export function simulate(simulationParameters: SimulationParameters) {
-  const { resp, cpp, employer, rrsp, tfsa, nonRegistered } =
+  const { resp, cpp, oas, employer, rrsp, tfsa, nonRegistered, government } =
     instantiateAccounts(simulationParameters);
 
   const {
@@ -46,11 +45,16 @@ export function simulate(simulationParameters: SimulationParameters) {
     // IF RETIRED
     if (age >= retirementAge) {
       netValues = applyTransaction(cpp.withdrawal(year), netValues);
+      netValues = applyTransaction(
+        oas.withdrawal(year, netValues.taxableIncome),
+        netValues
+      );
     }
 
     const inflationAccountedLivingExpenses =
       simulationParameters.livingExpenses * netInflation;
     netValues.cash -= inflationAccountedLivingExpenses;
+    logger.log(year, 'Living Expenses', inflationAccountedLivingExpenses);
 
     // INVEST
     if (netValues.cash > 0) {
@@ -70,7 +74,7 @@ export function simulate(simulationParameters: SimulationParameters) {
     }
 
     // PAY TAX
-    netValues = applyTransaction(calculateTaxOwed(year, netValues), netValues);
+    netValues = applyTransaction(government.payTax(year, netValues), netValues);
 
     if (netValues.capitalGains !== 0 || netValues.taxableIncome !== 0) {
       throw Error("Post tax values should be zero'd");
@@ -98,6 +102,8 @@ export function simulate(simulationParameters: SimulationParameters) {
     tfsa.newYear();
     rrsp.newYear();
     resp.newYear();
+    oas.newYear();
+    government.newYear();
     nonRegistered.newYear();
     netInflation *= averageInflation + 1;
     netValues.employmentIncome = 0;

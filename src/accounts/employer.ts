@@ -11,7 +11,7 @@ export class Employer {
   }
 
   yearlyPaycheck(year: number): TransactionReturn {
-    const income = this.baseIncome * (1 + this.inflation) * year;
+    const income = this.baseIncome * (1 + this.inflation) ** year;
     logger.log(year, 'Employment Income', income);
     return {
       moneyOut: income,

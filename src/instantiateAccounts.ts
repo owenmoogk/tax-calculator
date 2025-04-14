@@ -1,7 +1,9 @@
 import type { SimulationParameters } from '.';
 import { CPP } from './accounts/cpp';
 import { Employer } from './accounts/employer';
+import { Government } from './accounts/government';
 import { NonRegistered } from './accounts/non-registered';
+import { OAS } from './accounts/oas';
 import { RESP } from './accounts/resp';
 import { RRSP } from './accounts/rrsp';
 import { TFSA } from './accounts/tfsa';
@@ -16,5 +18,8 @@ export function instantiateAccounts(sp: SimulationParameters) {
     sp.averageInterest,
     sp.averageInflation
   );
-  return { resp, cpp, employer, rrsp, tfsa, nonRegistered };
+  const oas = new OAS(sp.averageInflation);
+  const government = new Government(sp.averageInflation);
+
+  return { resp, cpp, oas, employer, rrsp, tfsa, nonRegistered, government };
 }
