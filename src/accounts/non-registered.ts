@@ -1,11 +1,10 @@
-import { NonNegativeFirstArg } from "../util";
 import { Account, TransactionReturn } from "./types";
 
 export class NonRegistered extends Account{
 
     bookCost = 0
 
-    @NonNegativeFirstArg
+    // @NonNegativeFirstArg
     addMoney(amount: number): TransactionReturn{
         this.value += amount
         this.bookCost += amount
