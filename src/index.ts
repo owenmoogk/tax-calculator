@@ -34,9 +34,9 @@ const simulationParameters: SimulationParameters = {
   deathAge: 80,
   numberOfChildren: 0,
   employerParams: {
-    grossIncome: 150e3,
+    grossIncome: 130e3,
   },
-  livingExpenses: 70e3,
+  livingExpenses: 50e3,
 
   averageInterest: 0.07,
   averageInflation: 0.02,

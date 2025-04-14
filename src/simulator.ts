@@ -102,6 +102,7 @@ export function simulate(simulationParameters: SimulationParameters) {
     tfsa.newYear();
     rrsp.newYear();
     resp.newYear();
+    cpp.newYear();
     oas.newYear();
     government.newYear();
     nonRegistered.newYear();

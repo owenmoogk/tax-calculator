@@ -1,35 +1,56 @@
 import { logger } from '../logger';
 import type { TransactionReturn } from './types';
 
-const yearBasicExemption = 3500;
-const YMPE = 71600;
-const YAMPE = 80400;
+const initialYMPE = 71600;
+const initialYAMPE = 80400;
+const initialBasicExemption = 3500;
 const baseCPPRate = 0.0595;
 const enhancedCPPRate = 0.04;
 
 export class CPP {
-  contributions: { YPE: number; ympe: number }[] = [];
+  private inflationRate: number;
+  private ympe: number;
+  private yampe: number;
+  private currentBasicExemption: number;
+  private contributions: { YPE: number; ympe: number }[] = [];
+
+  constructor(inflationRate: number) {
+    this.inflationRate = inflationRate;
+    this.ympe = initialYMPE;
+    this.yampe = initialYAMPE;
+    this.currentBasicExemption = initialBasicExemption;
+  }
+
+  newYear(): void {
+    this.ympe *= 1 + this.inflationRate;
+    this.yampe *= 1 + this.inflationRate;
+    this.currentBasicExemption *= 1 + this.inflationRate;
+  }
 
   contribute(year: number, employmentIncome: number): TransactionReturn {
-    const pensionableEarnings = Math.min(employmentIncome, YMPE);
+    const pensionableEarnings = Math.min(employmentIncome, this.ympe);
     const baseContributoryEarnings = Math.max(
       0,
-      pensionableEarnings - yearBasicExemption
+      pensionableEarnings - this.currentBasicExemption
     );
     const baseCPPPayment = baseContributoryEarnings * baseCPPRate;
 
     const enhancedContributoryEarnings = Math.max(
       0,
-      Math.min(employmentIncome, YAMPE) - YMPE
+      Math.min(employmentIncome, this.yampe) - this.ympe
     );
     const enhancedCPPPayment = enhancedContributoryEarnings * enhancedCPPRate;
 
-    this.contributions.push({ YPE: pensionableEarnings, ympe: YMPE });
+    this.contributions.push({
+      YPE: pensionableEarnings,
+      ympe: this.ympe,
+    });
 
-    logger.log(year, 'CPP Contribution', baseCPPPayment + enhancedCPPPayment);
+    const totalContribution = baseCPPPayment + enhancedCPPPayment;
+    logger.log(year, 'CPP Contribution', totalContribution);
 
     return {
-      moneyOut: -(baseCPPPayment + enhancedCPPPayment),
+      moneyOut: -totalContribution,
       employmentIncome: 0,
       taxableIncome: 0,
       realizedCapitalGains: 0,
@@ -47,7 +68,7 @@ export class CPP {
     }
     const N = this.contributions.length;
 
-    // Determine the average YMPE of the last five contribution years (or all if less than 5)
+    // Average YMPE of the last five contribution years (or all if fewer than 5)
     const lastFiveYmpe = this.contributions
       .slice(Math.max(0, N - 5))
       .map((c) => c.ympe);
@@ -59,17 +80,17 @@ export class CPP {
       (c) => c.YPE * (averageYmpeRetirement / c.ympe)
     );
 
-    // Apply the 17% dropout rule: exclude the lowest 17% of years
+    // Apply the 17% dropout rule
     const dropoutYears = Math.floor(0.17 * N);
-    const yearsToInclude = Math.max(1, N - dropoutYears); // Ensure at least one year is included
-    const sortedAdjustedYPEs = [...adjustedYPEs].sort((a, b) => b - a); // Descending order
+    const yearsToInclude = Math.max(1, N - dropoutYears);
+    const sortedAdjustedYPEs = [...adjustedYPEs].sort((a, b) => b - a);
     const topAdjustedYPEs = sortedAdjustedYPEs.slice(0, yearsToInclude);
 
     // Calculate Average Pensionable Earnings (APE)
     const APE =
       topAdjustedYPEs.reduce((sum, ype) => sum + ype, 0) / yearsToInclude;
 
-    // Base CPP pension: 25% of APE
+    // CPP pension is 25% of APE
     const annualPension = 0.25 * APE;
 
     logger.log(year, 'CPP Withdrawal', annualPension);

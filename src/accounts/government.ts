@@ -9,19 +9,19 @@ type TaxBracket = {
 };
 
 const ontarioTaxBrackets: TaxBracket[] = [
-  { lowerBound: 0, upperBound: 51446, rate: 0.0505 },
-  { lowerBound: 51446, upperBound: 102894, rate: 0.0915 },
-  { lowerBound: 102894, upperBound: 150000, rate: 0.1116 },
+  { lowerBound: 0, upperBound: 52886, rate: 0.0505 },
+  { lowerBound: 52886, upperBound: 105775, rate: 0.0915 },
+  { lowerBound: 105775, upperBound: 150000, rate: 0.1116 },
   { lowerBound: 150000, upperBound: 220000, rate: 0.1216 },
   { lowerBound: 220000, upperBound: Infinity, rate: 0.1316 },
 ];
 
 const canadaTaxBrackets: TaxBracket[] = [
-  { lowerBound: 0, upperBound: 55867, rate: 0.15 },
-  { lowerBound: 55867, upperBound: 111733, rate: 0.205 },
-  { lowerBound: 111733, upperBound: 173205, rate: 0.26 },
-  { lowerBound: 173205, upperBound: 246752, rate: 0.29 },
-  { lowerBound: 246752, upperBound: Infinity, rate: 0.333 },
+  { lowerBound: 0, upperBound: 57375, rate: 0.15 },
+  { lowerBound: 57375, upperBound: 114750, rate: 0.205 },
+  { lowerBound: 114750, upperBound: 177882, rate: 0.26 },
+  { lowerBound: 177882, upperBound: 253414, rate: 0.29 },
+  { lowerBound: 253414, upperBound: Infinity, rate: 0.333 },
 ];
 
 const capitalGainsInclusionRateCanada = 0.5;
@@ -32,6 +32,7 @@ const MEI = 65600;
 export class Government {
   inflationFraction: number;
   netInflation = 1;
+  MEI = MEI;
 
   constructor(avgInflation: number) {
     this.inflationFraction = avgInflation;
@@ -79,6 +80,7 @@ export class Government {
 
   newYear() {
     this.netInflation *= this.inflationFraction + 1;
+    this.MEI *= this.inflationFraction + 1;
   }
 
   private applyTax(
@@ -105,8 +107,8 @@ export class Government {
   }
 
   private calculateEI(income: number) {
-    if (income > MEI) {
-      income = MEI;
+    if (income > this.MEI) {
+      income = this.MEI;
     }
     return income * EIRate;
   }

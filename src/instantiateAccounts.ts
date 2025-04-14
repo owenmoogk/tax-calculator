@@ -10,7 +10,7 @@ import { TFSA } from './accounts/tfsa';
 
 export function instantiateAccounts(sp: SimulationParameters) {
   const resp = new RESP(sp.respParams, sp.averageInterest, sp.averageInflation);
-  const cpp = new CPP();
+  const cpp = new CPP(sp.averageInflation);
   const employer = new Employer(sp.employerParams, sp.averageInflation);
   const rrsp = new RRSP(sp.averageInterest, sp.averageInflation);
   const tfsa = new TFSA(sp.averageInterest, sp.averageInflation);
