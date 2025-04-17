@@ -10,13 +10,13 @@ export class RRSP extends Account {
   increaseContributionRoom(grossIncome: number) {
     this.contributionRoom += Math.min(
       grossIncome * contributionRoomMultiplier,
-      maxContributionRoomPerYear
+      maxContributionRoomPerYear // TODO: ACCOUNT FOR INFLATION
     );
   }
 
   // @NonNegativeFirstArg
   addMoney(amount: number): TransactionReturn {
-    if (amount < this.contributionRoom)
+    if (amount > this.contributionRoom)
       throw Error('Cannot exceed contribution room in RRSP');
     this.value += amount;
     this.contributionRoom -= amount;

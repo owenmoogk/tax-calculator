@@ -6,7 +6,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "csv-writer": "^1.6.0"
+    "csv-writer": "^1.6.0",
+    "react": "^19.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.1",

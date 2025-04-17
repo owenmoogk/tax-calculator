@@ -3,18 +3,18 @@ import { instantiateAccounts } from './instantiateAccounts';
 import type { TransactionReturn } from './accounts/types';
 import type { SimulationParameters } from '.';
 
+const retirementAge = 65;
+
 export function simulate(simulationParameters: SimulationParameters) {
   const { resp, cpp, oas, employer, rrsp, tfsa, nonRegistered, government } =
     instantiateAccounts(simulationParameters);
 
-  const {
-    startingAge,
-    deathAge,
-    startingCalendarYear,
-    schoolToEmploymentAge,
-    retirementAge,
-    averageInflation,
-  } = simulationParameters;
+  const { startingCalendarYear, averageInflation, stages } =
+    simulationParameters;
+
+  const startAge = stages[0].startAge;
+  const endAge = stages.at(-1)?.endAge;
+  if (!endAge) throw Error('Must have at least one stage');
 
   let netValues: NetValues = {
     employmentIncome: 0,
@@ -24,22 +24,29 @@ export function simulate(simulationParameters: SimulationParameters) {
   };
 
   let netInflation = 1;
-
-  for (let year = 0; year <= deathAge - startingAge; year++) {
+  let currentStageIndex = 0;
+  for (let year = 0; year < endAge - startAge; year++) {
     const calendarYear = startingCalendarYear + year;
-    const age = startingAge + year;
+    const age = startAge + year;
+    while (age >= stages[currentStageIndex].endAge) {
+      currentStageIndex += 1;
+    }
+    const currentStage = stages[currentStageIndex];
 
-    // IF IN SCHOOL
-    if (age < schoolToEmploymentAge) {
+    // WITHDRAWING FROM RESP
+    if (currentStage.respWithdrawalPercent) {
       netValues = applyTransaction(
-        resp.withdrawal(resp.value / (schoolToEmploymentAge - age)),
+        resp.withdrawal(resp.value * currentStage.respWithdrawalPercent(age)),
         netValues
       );
     }
 
     // IF WORKING
-    if (age >= schoolToEmploymentAge && age < retirementAge) {
-      netValues = applyTransaction(employer.yearlyPaycheck(year), netValues);
+    if (currentStage.employerParams) {
+      netValues = applyTransaction(
+        employer.yearlyPaycheck(year, currentStage.employerParams.grossIncome),
+        netValues
+      );
     }
 
     // IF RETIRED
@@ -52,28 +59,44 @@ export function simulate(simulationParameters: SimulationParameters) {
     }
 
     const inflationAccountedLivingExpenses =
-      simulationParameters.livingExpenses * netInflation;
+      currentStage.livingExpenses * netInflation;
     netValues.cash -= inflationAccountedLivingExpenses;
     logger.log(year, 'Living Expenses', inflationAccountedLivingExpenses);
 
     // INVEST
-    if (netValues.cash > 0) {
+    const totalEmergencyCash = currentStage.allocations.totalEmergencyCash;
+    if (netValues.cash > currentStage.allocations.totalEmergencyCash) {
       netValues = applyTransaction(
         tfsa.addMoney(
-          Math.min(tfsa.contributionLimitRemaining, netValues.cash)
+          Math.min(
+            tfsa.contributionLimitRemaining *
+              currentStage.allocations.tfsa(age),
+            netValues.cash - totalEmergencyCash
+          )
         ),
         netValues
       );
 
-      if (netValues.cash > 100e3) {
-        netValues = applyTransaction(
-          nonRegistered.addMoney(netValues.cash - 100e3),
-          netValues
-        );
-      }
+      netValues = applyTransaction(
+        rrsp.addMoney(
+          Math.min(
+            rrsp.contributionRoom * currentStage.allocations.rrsp(age),
+            netValues.cash - totalEmergencyCash
+          )
+        ),
+        netValues
+      );
+
+      netValues = applyTransaction(
+        nonRegistered.addMoney(
+          Math.max(netValues.cash - totalEmergencyCash, 0)
+        ),
+        netValues
+      );
     }
 
     // PAY TAX
+    rrsp.increaseContributionRoom(netValues.employmentIncome);
     netValues = applyTransaction(government.payTax(year, netValues), netValues);
 
     if (netValues.capitalGains !== 0 || netValues.taxableIncome !== 0) {

@@ -2,19 +2,14 @@ import { simulate } from './simulator';
 
 export type SimulationParameters = {
   startingCalendarYear: number;
-  startingAge: number;
-  schoolToEmploymentAge: number;
-  retirementAge: number;
-  deathAge: number;
   numberOfChildren: number;
 
-  employerParams: EmployerParams;
-  livingExpenses: number;
+  stages: LifeStage[];
+
+  respParams: RESPParams;
 
   averageInterest: number;
   averageInflation: number;
-
-  respParams: RESPParams;
 };
 
 export type RESPParams = {
@@ -26,18 +21,66 @@ export type EmployerParams = {
   grossIncome: number;
 };
 
+export type LifeStage = {
+  startAge: number;
+  endAge: number;
+  name?: string;
+
+  livingExpenses: number;
+  employerParams?: EmployerParams;
+
+  allocations: {
+    tfsa: (age: number) => number; // 0-1, percentage of maximum allowable
+    rrsp: (age: number) => number; // 0-1, percentage of maximum allowable
+    totalEmergencyCash: number; // value, amount of emergency cash on hand
+  };
+
+  expenseSources?: {
+    rrspMaxWithdrawal: number;
+  };
+
+  respWithdrawalPercent?: (age: number) => number;
+};
+
 const simulationParameters: SimulationParameters = {
   startingCalendarYear: 2025,
-  startingAge: 20,
-  schoolToEmploymentAge: 23,
-  retirementAge: 65,
-  deathAge: 80,
+  stages: [
+    // {
+    //   startAge: 20,
+    //   endAge: 23,
+    //   livingExpenses: 40e3,
+    //   allocations: {
+    //     tfsa: () => 1,
+    //     rrsp: () => 1,
+    //     totalEmergencyCash: 10000,
+    //   },
+    //   respWithdrawalPercent: (age) => 1 / (23 - age),
+    // },
+    {
+      startAge: 23,
+      endAge: 65,
+      employerParams: {
+        grossIncome: 130e3,
+      },
+      livingExpenses: 50e3,
+      allocations: {
+        tfsa: () => 1,
+        rrsp: () => 1,
+        totalEmergencyCash: 50000,
+      },
+    },
+    {
+      startAge: 65,
+      endAge: 85,
+      livingExpenses: 30e3,
+      allocations: {
+        tfsa: () => 1,
+        rrsp: () => 1,
+        totalEmergencyCash: 30000,
+      },
+    },
+  ],
   numberOfChildren: 0,
-  employerParams: {
-    grossIncome: 130e3,
-  },
-  livingExpenses: 50e3,
-
   averageInterest: 0.07,
   averageInflation: 0.02,
   respParams: {
