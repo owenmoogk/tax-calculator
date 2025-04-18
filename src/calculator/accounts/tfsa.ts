@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 import type { TransactionReturn } from './types';
 import { Account } from './types';
 
@@ -6,12 +7,13 @@ const contributionLimitPerYear = 5000;
 export class TFSA extends Account {
   contributionLimitRemaining = contributionLimitPerYear;
 
-  addMoney(amount: number): TransactionReturn {
+  addMoney(year: number, amount: number): TransactionReturn {
     if (amount > this.contributionLimitRemaining) {
       amount = this.contributionLimitRemaining;
     }
     this.value += amount;
     this.contributionLimitRemaining -= amount;
+    logger.log(year, 'TFSA Contribution', amount);
     return {
       moneyOut: -amount,
       taxableIncome: 0,

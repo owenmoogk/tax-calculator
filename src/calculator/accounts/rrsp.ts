@@ -1,3 +1,4 @@
+import { logger } from '../logger';
 import type { TransactionReturn } from './types';
 import { Account } from './types';
 
@@ -14,11 +15,12 @@ export class RRSP extends Account {
     );
   }
 
-  addMoney(amount: number): TransactionReturn {
-    if (amount > this.contributionRoom)
-      throw Error('Cannot exceed contribution room in RRSP');
+  addMoney(year: number, amount: number): TransactionReturn {
+    if (amount < 0) amount = 0;
+    if (amount > this.contributionRoom) amount = this.contributionRoom;
     this.value += amount;
     this.contributionRoom -= amount;
+    logger.log(year, 'RRSP Contribution', amount);
     return {
       moneyOut: -amount,
       employmentIncome: 0,

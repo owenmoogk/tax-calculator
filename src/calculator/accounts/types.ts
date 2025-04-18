@@ -24,6 +24,6 @@ export abstract class Account {
     this.year += 1;
   }
 
-  abstract addMoney(amount: number): TransactionReturn;
+  abstract addMoney(year: number, amount: number): TransactionReturn;
   abstract withdrawal(amount: number): TransactionReturn;
 }

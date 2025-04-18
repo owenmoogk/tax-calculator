@@ -33,7 +33,7 @@ export function simulate(simulationParameters: SimulationParameters) {
     }
     const currentStage = stages[currentStageIndex];
 
-    if (age === 72) {
+    if (age === 48) {
       console.log('Breakpoint');
     }
 
@@ -107,6 +107,7 @@ export function simulate(simulationParameters: SimulationParameters) {
     } else {
       netValues = applyTransaction(
         tfsa.addMoney(
+          year,
           Math.min(
             tfsa.contributionLimitRemaining *
               currentStage.allocations.tfsa(age),
@@ -118,9 +119,11 @@ export function simulate(simulationParameters: SimulationParameters) {
       if (age < governmentImposedRetirementAge) {
         netValues = applyTransaction(
           rrsp.addMoney(
+            year,
             Math.min(
-              rrsp.contributionRoom * currentStage.allocations.rrsp(age),
-              Math.max(netValues.cash - targetCash, 0)
+              netValues.taxableIncome *
+                currentStage.allocations.rrspPercentOfIncome(age),
+              netValues.cash - targetCash
             )
           ),
           netValues
@@ -176,7 +179,30 @@ export function simulate(simulationParameters: SimulationParameters) {
   const results = logger.records;
   logger.reset();
 
-  return results;
+  netValues = applyTransaction(tfsa.withdrawal(tfsa.value), netValues);
+  netValues = applyTransaction(rrsp.withdrawal(rrsp.value), netValues);
+  netValues = applyTransaction(
+    nonRegistered.withdrawal(nonRegistered.value),
+    netValues
+  );
+  // ASSUMING RESP IS EMPTY, OTHERWISE EMPTY IT TOO
+  netValues = applyTransaction(
+    government.payTax(endAge - startAge, netValues),
+    netValues
+  );
+
+  if (
+    tfsa.value !== 0 ||
+    rrsp.value !== 0 ||
+    resp.value !== 0 ||
+    nonRegistered.value !== 0
+  ) {
+    throw Error("An account isn't zero'd after death!");
+  }
+
+  const estateValue = netValues.cash;
+
+  return { results, estateValue };
 }
 
 export type NetValues = {
