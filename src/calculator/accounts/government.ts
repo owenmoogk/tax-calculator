@@ -38,26 +38,19 @@ export class Government {
     this.inflationFraction = avgInflation;
   }
 
+  calculateTotalTax(netValues: NetValues): number {
+    const { federalTax, provincialTax, eiCost } =
+      this.calculateTaxPaymentsByCategory(netValues);
+    return federalTax + provincialTax + eiCost;
+  }
+
   payTax(year: number, netValues: NetValues): TransactionReturn {
     const taxableIncomeForLogging = netValues.taxableIncome;
     if (netValues.capitalGains < 0 || netValues.taxableIncome < 0) {
       throw new Error("Can't claim a negative income.");
     }
-    const federalTax = this.applyTax(
-      netValues.taxableIncome,
-      netValues.capitalGains,
-      capitalGainsInclusionRateCanada,
-      canadaTaxBrackets
-    );
-    const provincialTax = this.applyTax(
-      netValues.taxableIncome,
-      netValues.capitalGains,
-      capitalGainsInclusionRateOntario,
-      ontarioTaxBrackets
-    );
-
-    const eiCost = this.calculateEI(netValues.employmentIncome);
-
+    const { federalTax, provincialTax, eiCost } =
+      this.calculateTaxPaymentsByCategory(netValues);
     logger.log(year, 'EI Cost', eiCost);
     logger.log(year, 'Provincial Tax', provincialTax);
     logger.log(year, 'Federal Tax', federalTax);
@@ -81,6 +74,25 @@ export class Government {
   newYear() {
     this.netInflation *= this.inflationFraction + 1;
     this.MEI *= this.inflationFraction + 1;
+  }
+
+  private calculateTaxPaymentsByCategory(netValues: NetValues) {
+    const federalTax = this.applyTax(
+      netValues.taxableIncome,
+      netValues.capitalGains,
+      capitalGainsInclusionRateCanada,
+      canadaTaxBrackets
+    );
+
+    const provincialTax = this.applyTax(
+      netValues.taxableIncome,
+      netValues.capitalGains,
+      capitalGainsInclusionRateOntario,
+      ontarioTaxBrackets
+    );
+    const eiCost = this.calculateEI(netValues.employmentIncome);
+
+    return { federalTax, provincialTax, eiCost };
   }
 
   private applyTax(

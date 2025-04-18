@@ -2,7 +2,7 @@ import type { SimulationParameters } from '.';
 import { CPP } from './accounts/cpp';
 import { Employer } from './accounts/employer';
 import { Government } from './accounts/government';
-import { NonRegistered } from './accounts/non-registered';
+import { NonRegistered } from './accounts/nonRegistered';
 import { OAS } from './accounts/oas';
 import { RESP } from './accounts/resp';
 import { RRSP } from './accounts/rrsp';

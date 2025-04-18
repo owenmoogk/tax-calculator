@@ -17,7 +17,6 @@ export class RESP extends Account {
     this.GovernmentMatched = 0;
   }
 
-  // @NonNegativeFirstArg
   addMoney(amount: number): TransactionReturn {
     this.value += amount;
     if (this.GovernmentMatched < this.GovernmentMatchMaximum) {
@@ -48,10 +47,9 @@ export class RESP extends Account {
   }
 
   withdrawal(amount: number): TransactionReturn {
-    if (amount > this.value)
-      throw Error(
-        `Withdrawal cannot exceed value of account (RESP): Amount remaining: ${this.value.toString()}, Amount Requested: ${amount.toString()}`
-      );
+    if (amount > this.value) {
+      amount = this.value;
+    }
     const eapFraction = this.EAPAmount / this.value;
     this.EAPAmount -= amount * eapFraction;
     this.value -= amount;

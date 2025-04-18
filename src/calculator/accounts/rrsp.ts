@@ -14,7 +14,6 @@ export class RRSP extends Account {
     );
   }
 
-  // @NonNegativeFirstArg
   addMoney(amount: number): TransactionReturn {
     if (amount > this.contributionRoom)
       throw Error('Cannot exceed contribution room in RRSP');
@@ -29,8 +28,9 @@ export class RRSP extends Account {
   }
 
   withdrawal(amount: number): TransactionReturn {
-    if (amount > this.value)
-      throw Error('Cannot withdrawal more than exists in RRSP');
+    if (amount > this.value) {
+      amount = this.value;
+    }
     this.value -= amount;
     return {
       moneyOut: amount,

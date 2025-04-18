@@ -6,13 +6,12 @@ const contributionLimitPerYear = 5000;
 export class TFSA extends Account {
   contributionLimitRemaining = contributionLimitPerYear;
 
-  // @NonNegativeFirstArg
   addMoney(amount: number): TransactionReturn {
+    if (amount > this.contributionLimitRemaining) {
+      amount = this.contributionLimitRemaining;
+    }
     this.value += amount;
     this.contributionLimitRemaining -= amount;
-    if (this.contributionLimitRemaining < 0) {
-      throw Error('Exceeded TFSA contribution limit');
-    }
     return {
       moneyOut: -amount,
       taxableIncome: 0,
@@ -22,11 +21,11 @@ export class TFSA extends Account {
   }
 
   withdrawal(amount: number): TransactionReturn {
+    if (amount > this.value) {
+      amount = this.value;
+    }
     this.value -= amount;
     this.contributionLimitRemaining += amount;
-    if (this.value < 0) {
-      throw Error('Exceeded possible withdrawal from TFSA');
-    }
     return {
       moneyOut: amount,
       taxableIncome: 0,

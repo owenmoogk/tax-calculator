@@ -33,19 +33,11 @@ export function simulate(simulationParameters: SimulationParameters) {
     }
     const currentStage = stages[currentStageIndex];
 
-    if (age === 66) {
+    if (age === 72) {
       console.log('Breakpoint');
     }
 
-    // WITHDRAWING FROM RESP
-    if (currentStage.respWithdrawalPercent) {
-      netValues = applyTransaction(
-        resp.withdrawal(resp.value * currentStage.respWithdrawalPercent(age)),
-        netValues
-      );
-    }
-
-    // IF WORKING
+    // 1. Employment Income
     if (currentStage.employerParams) {
       netValues = applyTransaction(
         employer.yearlyPaycheck(year, currentStage.employerParams.grossIncome),
@@ -53,7 +45,15 @@ export function simulate(simulationParameters: SimulationParameters) {
       );
     }
 
-    // IF RETIRED
+    // 2. RESP Income
+    if (currentStage.respWithdrawalPercent) {
+      netValues = applyTransaction(
+        resp.withdrawal(resp.value * currentStage.respWithdrawalPercent(age)),
+        netValues
+      );
+    }
+
+    // 3. Retirement Income
     if (age >= governmentImposedRetirementAge) {
       netValues = applyTransaction(cpp.withdrawal(year), netValues);
       netValues = applyTransaction(
@@ -61,87 +61,83 @@ export function simulate(simulationParameters: SimulationParameters) {
         netValues
       );
     }
-
-    const inflationAccountedLivingExpenses =
-      currentStage.livingExpenses * netInflation;
-    netValues.cash -= inflationAccountedLivingExpenses;
-    logger.log(year, 'Living Expenses', inflationAccountedLivingExpenses);
-
-    const totalEmergencyCash =
-      currentStage.allocations.totalEmergencyCash * netInflation;
-
-    // PULL OUT OF RRSP
-    if (
-      netValues.cash < totalEmergencyCash ||
-      currentStage.rrspMaxPreferrableWithdrawal
-    ) {
+    if (currentStage.rrspMaxPreferrableWithdrawal) {
       netValues = applyTransaction(
         rrsp.withdrawal(
-          Math.max(
-            totalEmergencyCash - netValues.cash,
-            (currentStage.rrspMaxPreferrableWithdrawal?.(age) ?? 0) *
-              netInflation
-          )
-        ),
-        netValues
-      );
-    }
-    if (netValues.cash < totalEmergencyCash) {
-      netValues = applyTransaction(
-        tfsa.withdrawal(totalEmergencyCash - netValues.cash),
-        netValues
-      );
-    }
-
-    // INVEST
-    if (
-      netValues.cash > currentStage.allocations.totalEmergencyCash &&
-      age < governmentImposedRetirementAge
-    ) {
-      netValues = applyTransaction(
-        rrsp.addMoney(
-          Math.min(
-            rrsp.contributionRoom * currentStage.allocations.rrsp(age),
-            netValues.cash - totalEmergencyCash
-          )
+          currentStage.rrspMaxPreferrableWithdrawal(age) * netInflation
         ),
         netValues
       );
     }
 
-    // PAY TAX
-    rrsp.increaseContributionRoom(netValues.employmentIncome);
-    netValues = applyTransaction(government.payTax(year, netValues), netValues);
-
-    if (netValues.cash > currentStage.allocations.totalEmergencyCash) {
-      netValues = applyTransaction(
-        tfsa.addMoney(
-          Math.min(
-            tfsa.contributionLimitRemaining *
-              currentStage.allocations.tfsa(age),
-            Math.max(netValues.cash - totalEmergencyCash, 0)
-          )
-        ),
-        netValues
-      );
-
-      netValues = applyTransaction(
-        nonRegistered.addMoney(
-          Math.max(netValues.cash - totalEmergencyCash, 0)
-        ),
-        netValues
-      );
-    }
-
-    if (netValues.capitalGains !== 0 || netValues.taxableIncome !== 0) {
-      throw Error("Post tax values should be zero'd");
-    }
-
+    // 4. CPP Contribution
     if (age < governmentImposedRetirementAge) {
       netValues = applyTransaction(
         cpp.contribute(year, netValues.employmentIncome),
         netValues
       );
+    }
+
+    // 5. Approximate Taxation After Income
+    const approximateTax = government.calculateTotalTax(netValues);
+
+    // 6. Living Expenses
+    const inflationAccountedLivingExpenses =
+      currentStage.livingExpenses * netInflation;
+    netValues.cash -= inflationAccountedLivingExpenses;
+    logger.log(year, 'Living Expenses', inflationAccountedLivingExpenses);
+
+    // 7. Calculate Net Cashflow (in/out of investments)
+    const totalEmergencyCash =
+      currentStage.allocations.totalEmergencyCash * netInflation;
+    const targetCash = totalEmergencyCash + approximateTax;
+
+    // 8. Invest or withdraw to hit target cash
+    if (netValues.cash < targetCash) {
+      netValues = applyTransaction(
+        tfsa.withdrawal(targetCash - netValues.cash),
+        netValues
+      );
+      if (netValues.cash < targetCash) {
+        netValues = applyTransaction(
+          rrsp.withdrawal(targetCash - netValues.cash),
+          netValues
+        );
+      }
+    } else {
+      netValues = applyTransaction(
+        tfsa.addMoney(
+          Math.min(
+            tfsa.contributionLimitRemaining *
+              currentStage.allocations.tfsa(age),
+            Math.max(netValues.cash - targetCash, 0)
+          )
+        ),
+        netValues
+      );
+      if (age < governmentImposedRetirementAge) {
+        netValues = applyTransaction(
+          rrsp.addMoney(
+            Math.min(
+              rrsp.contributionRoom * currentStage.allocations.rrsp(age),
+              Math.max(netValues.cash - targetCash, 0)
+            )
+          ),
+          netValues
+        );
+      }
+      netValues = applyTransaction(
+        nonRegistered.addMoney(Math.max(netValues.cash - targetCash, 0)),
+        netValues
+      );
+    }
+
+    // 9. Pay Tax
+    rrsp.increaseContributionRoom(netValues.employmentIncome);
+    netValues = applyTransaction(government.payTax(year, netValues), netValues);
+
+    if (netValues.capitalGains !== 0 || netValues.taxableIncome !== 0) {
+      throw Error("Post tax values should be zero'd");
     }
 
     logger.record(
@@ -155,7 +151,7 @@ export function simulate(simulationParameters: SimulationParameters) {
       netValues.cash
     );
 
-    // RESET LIMITS
+    // 10. Reset Limits
     if (
       netValues.cash < 0 ||
       tfsa.value < 0 ||

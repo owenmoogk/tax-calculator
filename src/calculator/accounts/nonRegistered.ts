@@ -4,7 +4,6 @@ export class NonRegistered extends Account{
 
     bookCost = 0
 
-    // @NonNegativeFirstArg
     addMoney(amount: number): TransactionReturn {
       this.value += amount
       this.bookCost += amount
@@ -12,7 +11,7 @@ export class NonRegistered extends Account{
     }
 
     withdrawal(amount: number): TransactionReturn{
-      if (amount > this.value) throw Error("Not enough funds to perform withdrawal (Non-registered)")
+      if (amount > this.value) {amount = this.value}
       const fractionWithdrew = amount / this.value
       const totalCapitalGains = this.value - this.bookCost
       const claimedCapitalGains = totalCapitalGains * fractionWithdrew
