@@ -10,7 +10,7 @@ export class RRSP extends Account {
   increaseContributionRoom(grossIncome: number) {
     this.contributionRoom += Math.min(
       grossIncome * contributionRoomMultiplier,
-      maxContributionRoomPerYear // TODO: ACCOUNT FOR INFLATION
+      maxContributionRoomPerYear * this.netInflation
     );
   }
 
@@ -29,7 +29,7 @@ export class RRSP extends Account {
   }
 
   withdrawal(amount: number): TransactionReturn {
-    if (amount < this.value)
+    if (amount > this.value)
       throw Error('Cannot withdrawal more than exists in RRSP');
     this.value -= amount;
     return {

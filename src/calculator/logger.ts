@@ -1,6 +1,6 @@
 import { createObjectCsvWriter } from 'csv-writer';
 
-class Logger {
+export class Logger {
   records: Record<string, number>[] = [];
   keys: Set<string> = new Set();
 
@@ -16,6 +16,11 @@ class Logger {
       { id: 'netWorth', title: 'NetWorth' },
     ],
   });
+
+  reset() {
+    this.records = [];
+    this.keys = new Set();
+  }
 
   log(year: number, name: string, value: number) {
     if (!this.records[year]) {

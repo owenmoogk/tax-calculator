@@ -10,7 +10,7 @@
         "ts-node/register"
       ],
       "args": [
-        "${workspaceFolder}/src/index.ts"
+        "${workspaceFolder}/src/calculator/index.ts"
       ],
       "sourceMaps": true,
       "console": "integratedTerminal"

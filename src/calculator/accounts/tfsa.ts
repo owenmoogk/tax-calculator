@@ -37,6 +37,7 @@ export class TFSA extends Account {
 
   newYear() {
     super.newYear();
-    this.contributionLimitRemaining += contributionLimitPerYear;
+    this.contributionLimitRemaining +=
+      contributionLimitPerYear * this.netInflation;
   }
 }

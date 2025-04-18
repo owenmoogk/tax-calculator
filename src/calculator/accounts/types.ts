@@ -20,7 +20,7 @@ export abstract class Account {
 
   newYear() {
     this.value *= this.interest + 1;
-    this.netInflation *= this.inflationFraction;
+    this.netInflation *= this.inflationFraction + 1;
     this.year += 1;
   }
 

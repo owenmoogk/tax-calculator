@@ -40,9 +40,10 @@ export type LifeStage = {
   };
 
   respWithdrawalPercent?: (age: number) => number;
+  rrspMaxPreferrableWithdrawal?: (age: number) => number;
 };
 
-const simulationParameters: SimulationParameters = {
+export const exampleSimulationParameters: SimulationParameters = {
   startingCalendarYear: 2025,
   stages: [
     // {
@@ -62,7 +63,7 @@ const simulationParameters: SimulationParameters = {
       employerParams: {
         grossIncome: 130e3,
       },
-      livingExpenses: 50e3,
+      livingExpenses: 65e3,
       allocations: {
         tfsa: () => 1,
         rrsp: () => 1,
@@ -72,12 +73,13 @@ const simulationParameters: SimulationParameters = {
     {
       startAge: 65,
       endAge: 85,
-      livingExpenses: 30e3,
+      livingExpenses: 100e3,
       allocations: {
         tfsa: () => 1,
         rrsp: () => 1,
         totalEmergencyCash: 30000,
       },
+      rrspMaxPreferrableWithdrawal: () => 70e3,
     },
   ],
   numberOfChildren: 0,
@@ -89,4 +91,4 @@ const simulationParameters: SimulationParameters = {
   },
 };
 
-simulate(simulationParameters);
+simulate(exampleSimulationParameters);
